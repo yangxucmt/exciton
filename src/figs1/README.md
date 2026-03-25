@@ -1,1 +1,1 @@
-Fig S1 is a schematic figure which has no corresponding data sets.
+Fig S1 is a schematic figure with no corresponding data sets.
