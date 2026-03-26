@@ -53,7 +53,6 @@ function Vint_Constructor(lattice::Lattice2D, Nsample::Int; r0)
 	b2 = lattice.b2
 
 	cutoff = floor(Nsample * sqrt(3) / 4) - 1
-
 	screened_r_mat = zeros(ComplexF64, Nsample, Nsample)
 	for x ∈ 1:Nsample
 		for y ∈ 1:Nsample
@@ -176,7 +175,6 @@ function gauge_fixing(psi, g_list)
 	for mind ∈ 1:nbands, nind ∈ 1:nbands, lind ∈ 1:nbands
 		umat_mn[mind, nind] += (psi[mind]' * g_list[lind]) * sinvmat[lind, nind]
 	end
-
 	# the definition of umat is: \tilde{\phi}_n=\sum\limits_m umat_mn * \psi_m
 
 	return umat_mn
@@ -224,10 +222,7 @@ function projection_gauge_fixing(Bloch, Nsample; sz, lattice)
 	gv = [0.4 - 0.1im, -0.3 + 0.1im, -0.4 + 0.15im]
 	gv = gv ./ norm(gv)
 
-	#  gv = wmat_v[Nsample, Nsample, :]
-
 	for xi ∈ 1:Nsample, yi ∈ 1:Nsample
-		#gv = [0, sqrt(3)/2, im*sin((xi-yi)*2pi/Nsample)]
 		umat_mn = gauge_fixing([wmat_v[xi, yi, :]], [gv])
 		vvec = wmat_v[xi, yi, :] * umat_mn[1]
 		vlist[xi, yi, :] = vvec
@@ -309,7 +304,6 @@ function projection_gauge_fixing(Bloch, Nsample; sz, lattice)
 	end
 
 	println("gauge fixing successful!")
-
 	return BlochStates(newv, newc1, newc2, newecv)
 end
 
@@ -421,11 +415,7 @@ function compute_bse_kernel(sys::TMDBSE, VInt::InteractionMatrix, checkham = tru
 	return (ham + ham') / 2
 end
 
-
-# ------------------------------------------------------------------------------------------ #
-# ------------------------------- Below are for gauge fixing ------------------------------- #
-# ------------------------------------------------------------------------------------------ #
-
+# Below are for gauge fixing #
 
 function ifft_routine(A)
 	A_roll = circshift(A, (1, 1))
@@ -473,8 +463,7 @@ end
 
 function Rshift_calculator(sys::TMDBSE, psi, cutoff; strainyy = 0)
 	function periodic_cut_discrete(x::Integer, L::Integer, cutoff)
-		halfL = div(L, 2)  # integer division
-		# Wrap x into [-halfL, L - halfL - 1] for odd L
+		halfL = div(L, 2)  
 		y = mod1(x, L)
 		if y > halfL
 			y -= L
@@ -553,7 +542,6 @@ function Rshift_calculator(sys::TMDBSE, psi, cutoff; strainyy = 0)
 		end
 	end
 
-
 	if all(abs.(imag(Rshift)) .< 1e-8)
 		println(real.(Rshift))
 		return real.(Rshift)
@@ -595,7 +583,6 @@ function wigner_seitz(rvec, lattice, Nsample; tol = 1e-6)
 	if length(idxs) == 1
 		return candidates[idxs[1]]
 	else
-		# --- tie-breaking rule based on C3 symmetry axes ---
 		dirs = [Nsample * R1, Nsample * R2 - Nsample * R1, -Nsample * R2]
 
 		scores = [maximum(dot(c, d) for d in dirs) for c in candidates[idxs]]
@@ -701,8 +688,6 @@ function one_descent_step_singleband(Umn_mat; M0_blist, wb, alphaval = 0.3, vari
 		updated_Umn_mat[xi, yi, :, :] = Umn_mat[xi, yi, :, :] * exp(deltaWk)
 	end
 
-	# Step 2: update Mblist using the new Umn_mat
-
 	return updated_Umn_mat
 end
 
@@ -722,13 +707,10 @@ function one_descent_step(Umn_mat; M0_blist, wb, alphaval = 0.3, nbands, Nsample
 		sub_M_blist = [sub_M_b1, sub_M_b2, sub_M_b3]
 
 		Gk = Gk_subroutine(sub_M_blist; wb, nbands, blist, rlist)
-		# used 0.3
 		deltaWk = alphaval / (4 * wb) * Gk
 
 		updated_Umn_mat[xi, yi, :, :] = Umn_mat[xi, yi, :, :] * exp(deltaWk)
 	end
-
-	# Step 2: update Mblist using the new Umn_mat
 
 	return updated_Umn_mat
 end
@@ -930,8 +912,7 @@ function bloch_shift(wannier; lattice, Nsample, deltak = 0.2)
 end
 
 function periodic_cut_discrete(x::Integer, L::Integer, cutoff)
-	halfL = div(L, 2)  # integer division
-	# Wrap x into [-halfL, L - halfL - 1] for odd L
+	halfL = div(L, 2) 
 	y = mod1(x, L)
 	if y > halfL
 		y -= L
@@ -939,25 +920,8 @@ function periodic_cut_discrete(x::Integer, L::Integer, cutoff)
 	return abs(y) <= cutoff ? y : 0
 end
 
-function TMD_jx_6th(k; epsilonyy, sz, deltax = 0.1)
-	kx, ky = k
-	h = deltax
-	f(x) = exciton.TMD_hnn((x, ky); epsilonyy, sz)
-
-	return -(f(kx - 3h) - 9f(kx - 2h) + 45f(kx - h) - 45f(kx + h) + 9f(kx + 2h) - f(kx + 3h)) / (60h)
-end
-
-function TMD_jy_6th(k; epsilonyy, sz, deltay = 0.1)
-	kx, ky = k
-	h = deltay
-	f(y) = exciton.TMD_hnn((kx, y); epsilonyy, sz)
-
-	return -(f(ky - 3h) - 9f(ky - 2h) + 45f(ky - h) - 45f(ky + h) + 9f(ky + 2h) - f(ky + 3h)) / (60h)
-end
-
 function bse_kernel_construction(newbv, newbc1, newbc2, Nsample; VInt, epsilonyy, sz = 1, deltak, lattice)
 	V = VInt.V
-	# Precompute all Hamiltonian indices
 	ham_indices = Array{Int}(undef, Nsample, Nsample, 2)
 	for kx in 1:Nsample, ky in 1:Nsample, k_cond_ind in 1:2
 		ham_indices[kx, ky, k_cond_ind] = ham_index(kx, ky, k_cond_ind; xlength = Nsample, ylength = Nsample)
@@ -1003,17 +967,10 @@ function bse_kernel_construction(newbv, newbc1, newbc2, Nsample; VInt, epsilonyy
 
 end
 
-
-"""
-Helper: Shifts a wavefunction by multiple steps of dk.
-"""
 function generate_shifted_bloch(w, lattice, Nsample, dk, steps)
 	return [bloch_shift(w; lattice, Nsample, deltak = s * dk) for s in steps]
 end
 
-"""
-Helper: Solves the BSE for a specific k-shift to get the Envelope Function (Psi).
-"""
 function solve_bse_at_shift(bv, bc1, bc2, Nsample, VInt, epsilonyy, shift_idx, dk, state_idx; lattice)
 	# Calculate actual deltak for the kernel construction
 	current_deltak = FD2_STEPS[shift_idx] * dk
@@ -1024,18 +981,13 @@ function solve_bse_at_shift(bv, bc1, bc2, Nsample, VInt, epsilonyy, shift_idx, d
 	xlen = size(bsemat)[1]
 	x0 = rand(xlen)
 
-	# Solve Eigenproblem
 	valslist, vecslist, _ = eigsolve(bsemat, x0, 20, :SR,
 		krylovdim = 120, tol = 1e-10, maxiter = 40,
 		verbosity = 0, ishermitian = true)
 
-	# Extract specific state and energy
 	return vecslist[state_idx], valslist[1]
 end
 
-"""
-Helper: Enforces phase continuity (U(1) gauge fixing) across the list of Psis.
-"""
 function fix_gauge!(psi_list)
 	for n in 1:(length(psi_list)-1)
 		overlap = dot(psi_list[n], psi_list[n+1])
@@ -1047,9 +999,6 @@ function fix_gauge!(psi_list)
 	end
 end
 
-"""
-Term 1: Derivative of the Optical Matrix Element Phase (Wilson Line).
-"""
 function compute_optical_phase_deriv(bv_list, bc1_list, bc2_list, psi_list,
 	lattice, Nsample, dk, polarization, epsilonyy, sz)
 
@@ -1058,47 +1007,35 @@ function compute_optical_phase_deriv(bv_list, bc1_list, bc2_list, psi_list,
 	for (i, step_mult) in enumerate(FD2_STEPS)
 		pump_sum = ComplexF64(0.0)
 
-		# Grid loop
 		for xdim ∈ 1:Nsample, ydim ∈ 1:Nsample
-			# Calculate k for current shift
 			k = (xdim * lattice.b1 + (ydim + dk * step_mult) * lattice.b2) / Nsample
 
-			# Dipole operators
 			jx = TMD_jx_6th(k; epsilonyy, sz)
 			jy = TMD_jy_6th(k; epsilonyy, sz)
 			j_op = polarization[1] * jx + polarization[2] * jy
 
-			# Indices
 			p1_idx = ham_index(xdim, ydim, 1; xlength = Nsample, ylength = Nsample)
 			p2_idx = ham_index(xdim, ydim, 2; xlength = Nsample, ylength = Nsample)
 
-			# Wavefunctions at this grid point
 			v = bv_list[i][xdim, ydim, :]
 			c1 = bc1_list[i][xdim, ydim, :]
 			c2 = bc2_list[i][xdim, ydim, :]
 
-			# Optical transition elements weighted by Envelope Psi
 			pump_sum += (v' * j_op * c1) * psi_list[i][p1_idx]
 			pump_sum += (v' * j_op * c2) * psi_list[i][p2_idx]
 		end
 		phases[i] = angle(pump_sum)
 	end
 
-	# Apply 4th order finite difference to the scalar phases
 	deriv = sum(phases .* FD2_COEFFS)
 	return deriv
 end
 
-"""
-Term 2: Berry Connection of the Bloch Bands projected onto Envelope.
-Term 3: Derivative of the Envelope Function (Psi).
-"""
 function compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list, Nsample)
 
 	# Indices for the center point (k) within the lists
-	center_idx = findfirst(x -> x == 0, FD2_STEPS) # Should be 3
+	center_idx = findfirst(x -> x == 0, FD2_STEPS) 
 
-	# Pre-fetch center wavefunctions
 	v_center = bv_list[center_idx]
 	c1_center = bc1_list[center_idx]
 	c2_center = bc2_list[center_idx]
@@ -1106,12 +1043,8 @@ function compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list, Nsample)
 
 	term2 = ComplexF64(0.0)
 
-	# We need to compute <u(k) | d/dk | u(k)>.
-	# d/dk u(k) approx sum(coeffs[j] * u(k+j*dk))
-
 	for kx ∈ 1:Nsample, ky ∈ 1:Nsample
-		# 1. Compute Finite Difference Derivatives of Bloch functions at k (center)
-		# Initialize derivatives as zero vectors
+
 		dv = zeros(ComplexF64, length(v_center[kx, ky, :]))
 		dc1 = zeros(ComplexF64, length(c1_center[kx, ky, :]))
 		dc2 = zeros(ComplexF64, length(c2_center[kx, ky, :]))
@@ -1122,15 +1055,12 @@ function compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list, Nsample)
 			dc2 .+= coeff .* bc2_list[j][kx, ky, :]
 		end
 
-		# 2. Compute Berry Connections A = i <u | du> (un-normalized by dk here, handled in coeffs)
-		# Note: These are scalar values for specific kx, ky
 		Av = im * dot(v_center[kx, ky, :], dv)
 		Ac11 = im * dot(c1_center[kx, ky, :], dc1)
 		Ac12 = im * dot(c1_center[kx, ky, :], dc2)
 		Ac21 = im * dot(c2_center[kx, ky, :], dc1)
 		Ac22 = im * dot(c2_center[kx, ky, :], dc2)
 
-		# 3. Project onto Envelope Function (Psi)
 		p1 = ham_index(kx, ky, 1; xlength = Nsample, ylength = Nsample)
 		p2 = ham_index(kx, ky, 2; xlength = Nsample, ylength = Nsample)
 
@@ -1143,8 +1073,6 @@ function compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list, Nsample)
 		term2 += (Ac22 - Av) * conj(psi2) * psi2
 	end
 
-	# Term 3: Envelope Derivative <Psi | d/dk | Psi>
-	# d/dk Psi approx sum(coeffs[j] * Psi[j])
 	dPsi = zeros(ComplexF64, length(psi_center))
 	for (j, coeff) in enumerate(FD2_COEFFS)
 		dPsi .+= coeff .* psi_list[j]
@@ -1155,59 +1083,36 @@ function compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list, Nsample)
 	return term2, term3
 end
 
-# --- Main Subroutine ---
-
 function exciton_subroutine_4th(wv, wc1, wc2; state = 1, polarization = [[cos(pi / 3), sin(pi / 3)]], VInt, lattice, epsilonyy, sz = 1, Nsample)
 
 	dk = 0.01
 
-	# 1. Generate Shifted Bloch Functions (5 points: -2dk to +2dk)
 	bv_list = generate_shifted_bloch(wv, lattice, Nsample, dk, FD2_STEPS)
 	bc1_list = generate_shifted_bloch(wc1, lattice, Nsample, dk, FD2_STEPS)
 	bc2_list = generate_shifted_bloch(wc2, lattice, Nsample, dk, FD2_STEPS)
 
-	# 2. Compute Envelope Functions (Psi) for each shift
 	psi_list = Vector{Vector{ComplexF64}}(undef, length(FD2_STEPS))
 
-	#   println("Starting Diagonalization...")
 	for i in 1:length(FD2_STEPS)
 		psi, val = solve_bse_at_shift(bv_list[i], bc1_list[i], bc2_list[i],
 			Nsample, VInt, epsilonyy, i, dk, state; lattice)
 		psi_list[i] = psi
-		if i == 2 # Center point
-			println("Center Energy: ", val)
-		end
 	end
-	#  println("Finish computing envelope functions")
 
-	# 3. Gauge Fixing (Critical for derivatives)
 	psi_list_gauge_fixed = deepcopy(psi_list)
 	fix_gauge!(psi_list_gauge_fixed)
 
-	# 4. Compute Derivatives
-	# Normalization factor for derivative: 1 / (dk * |b2|/Nsample)
 	dk_norm = (dk * norm(lattice.b2) / Nsample)
-
-	# A. Optical Phase Derivative (Wilson-like term)
-	# The coeffs are applied inside, so result is d(Angle)/d(Step)
-	#   term1_val = compute_optical_phase_deriv(bv_list, bc1_list, bc2_list, psi_list_gauge_fixed,
-	#       lattice, Nsample, dk, polarization, epsilonyy, sz)
-
-	# B. Berry Connections and Envelope Derivative
-	# These return raw sums weighted by coeffs. We must divide by dk_norm at the end.
 	term2_val, term3_val = compute_berry_terms(bv_list, bc1_list, bc2_list, psi_list_gauge_fixed, Nsample)
-
 	rtot_list = Vector{ComplexF64}(undef, length(polarization))
 
 	for (j, pol) in pairs(polarization)
 
-		# Term 1 for this polarization
 		term1_val = compute_optical_phase_deriv(
 			bv_list, bc1_list, bc2_list, psi_list_gauge_fixed,
 			lattice, Nsample, dk, pol, epsilonyy, sz,
 		)
 
-		# rtot(j)
 		rtot_list[j] = (term1_val + term2_val + term3_val) / dk_norm
 	end
 

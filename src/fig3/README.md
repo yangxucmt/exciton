@@ -1,6 +1,6 @@
-# Figure S3 Data and Plotting Code
+# Figure 3 Data and Plotting Code
 
-This folder contains the code and data used to generate Fig. S3.
+This folder contains the code and data used to generate Fig. 3.
 
 ## Overview
 
@@ -37,9 +37,12 @@ Data files:
 - "fig3d_full.csv"
 - "fig3d_wannier.csv"
 
-Common:
+All y-axis values correspond to the $y$-component of the A1s excitonic transition shift vector $R_y$ composed of spin-up bound particle-hole pairs.
+
+Common units:
 - x-axis: Strain (%)
-- y-axis: Shift vector in units of $10^{-2}a$, where $a = 3.16\text{\AA}$
+- y-axis: Shift vector in units of $10^{-2}a$, where $a = 3.16\text{\AA}$. 
+
 
 ### Full calculation (Eq. 7)
 

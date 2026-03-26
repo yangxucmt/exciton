@@ -56,30 +56,6 @@ function InteractionMatrix(lattice::Lattice2D, Nsample::Int; lambda = 1, r0)
 	return InteractionMatrix(lattice, Nsample, V[1, :, :], V[2, :, :])
 end
 
-"""
-function Vint_Constructor(lattice::Lattice2D, Nsample::Int; r0)
-	R1 = lattice.R1
-	R2 = lattice.R2
-	b1 = lattice.b1
-	b2 = lattice.b2
-
-	cutoff = floor(Nsample * sqrt(3) / 4) - 1
-
-	screened_r_mat = zeros(ComplexF64, Nsample, Nsample)
-	for x = 1:Nsample
-		for y = 1:Nsample
-			screened_r_mat[x, y] = screened_coulomb_R(x, y; cutoff, Lx=Nsample, Ly=Nsample, R1, R2, r0)
-		end
-	end
-
-	VR_roll = circshift(screened_r_mat, (1, 1))
-	Vq_roll = fft(VR_roll)
-
-	return circshift(Vq_roll, (-1, -1))
-end
-
-"""
-
 function Vint_Constructor(lattice::Lattice2D, Nsample::Int; r0)
 	R1 = lattice.R1
 	R2 = lattice.R2
@@ -136,13 +112,11 @@ function screened_coulomb_R(rx_raw::Int, ry_raw::Int, character; cutoff, r0, Lx,
 		error("Invalid character. Use :AA or :AB.")
 	end
 
-	# Apply cutoff 
 	if R > cutoff + 0.01
 		return 0.0
 	end
 
 	return (struveh(0, R / r0) - bessely0(R / r0))
-	# pi*aB/r0
 end
 
 function HF_coulomb(kvec, kpvec; VAA, VAB, A = [0.0, 0.0], lattice, blochstates, Nsample)
@@ -185,7 +159,6 @@ struct GrapheneBSE
 	gap::ComplexF64
 	Nsample::Int
 
-	# Computed once
 	Bloch::BlochStates
 	Wannier::Union{Nothing, WannierStates}
 	BSEKernel::Union{Nothing, Array{ComplexF64, 2}}
