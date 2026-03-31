@@ -6,8 +6,6 @@ using Plots, LaTeXStrings
 using Struve
 using KrylovKit
 using SparseArrays
-using Arpack
-using QuadGK
 using ForwardDiff
 using FFTW
 using Measures
