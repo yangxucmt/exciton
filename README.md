@@ -1,4 +1,4 @@
-This repository provides the code used to generate the figures in [].
+This repository provides the code used to generate the figures in the paper "Correlated quantum shift vector of particle-hole excitations" (Xu Yang, Ajit Srivastava, and Justin C. W. Song).
 
 All data and figures are produced using Julia in jupyter notebook. Required packages include Struve, KrylovKit, FFTW, and ForwardDiff. Multi-threading is used to speed-up the code generating Fig 3 and Fig S2, so please open jupyter notebook in terminal with "JULIA_NUM_THREADS=4 jupyter notebook".
 
